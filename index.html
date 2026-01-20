@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>91打地鼠</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", sans-serif;
+        }
+
+        /* 主页面样式 */
+        #main-screen {
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #main-title {
+            font-size: 80px;
+            color: #fff;
+            font-weight: 900;
+            margin-bottom: 50px;
+        }
+        .btn {
+            padding: 15px 40px;
+            font-size: 24px;
+            background-color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #eee;
+        }
+
+        /* 游戏页面样式 */
+        #game-screen {
+            width: 100vw;
+            height: 100vh;
+            background-color: #f9d342;
+            display: none;
+            position: relative;
+        }
+        #countdown {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 36px;
+            font-weight: bold;
+            color: #ff3333;
+        }
+        #hole-container {
+            width: 90%;
+            height: 85%;
+            margin: 0 auto;
+            padding-top: 80px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .hole {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background-color: #fff;
+            border: 3px solid #333;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+        .hole img {
+            width: 85%;
+            height: 85%;
+            object-fit: cover;
+            transition: transform 0.2s;
+        }
+        .hole img.active {
+            transform: translateY(0);
+        }
+        .touch-effect {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            border: 4px solid rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 100;
+            transform: translate(-50%, -50%);
+        }
+
+        /* 结果页面样式 */
+        #result-screen {
+            width: 100vw;
+            height: 100vh;
+            background-color: #fff;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+        #top-avatar {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border: 3px solid #333;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        #result-info {
+            font-size: 22px;
+            margin-bottom: 40px;
+            line-height: 1.8;
+        }
+        #btn-group {
+            display: flex;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 主页面 -->
+    <div id="main-screen">
+        <h1 id="main-title">91</h1>
+        <button class="btn" id="start-btn">开始游戏</button>
+        <!-- 背景音乐 -->
+        <audio id="bg-music" src="音频编辑 1.mp3" loop></audio>
+    </div>
+
+    <!-- 游戏页面 -->
+    <div id="game-screen">
+        <div id="countdown">60</div>
+        <div id="hole-container">
+            <!-- 9个洞（自动生成） -->
+        </div>
+        <div id="touch-container"></div>
+        <!-- 打地鼠音效 -->
+        <audio id="hit-sound" src="打地鼠.mp3"></audio>
+    </div>
+
+    <!-- 结果页面 -->
+    <div id="result-screen">
+        <h2>游戏结束</h2>
+        <img id="top-avatar" src="" alt="被打最多的头像">
+        <div id="result-info">
+            <p>被打最多的头像：<span id="top-name"></span></p>
+            <p>被打次数：<span id="top-count">0</span>次</p>
+            <p>总击打次数：<span id="total-count">0</span>次</p>
+        </div>
+        <div id="btn-group">
+            <button class="btn" id="restart-btn">重新开始</button>
+            <button class="btn" id="back-btn">返回大厅</button>
+        </div>
+    </div>
+
+    <script>
+        // 获取元素
+        const mainScreen = document.getElementById('main-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const backBtn = document.getElementById('back-btn');
+        const countdownEl = document.getElementById('countdown');
+        const holeContainer = document.getElementById('hole-container');
+        const touchContainer = document.getElementById('touch-container');
+        const bgMusic = document.getElementById('bg-music');
+        const hitSound = document.getElementById('hit-sound');
+        const topAvatarEl = document.getElementById('top-avatar');
+        const topNameEl = document.getElementById('top-name');
+        const topCountEl = document.getElementById('top-count');
+        const totalCountEl = document.getElementById('total-count');
+
+        // 配置项
+        const AVATAR_LIST = [
+            "Screenshot_20260120_154608_edit_160628974005963.jpg",
+            "mmexport1768895031219.jpg",
+            "mmexport1768895044588.jpg",
+            "mmexport1768895054023.jpg",
+            "mmexport1768895061926.jpg",
+            "mmexport1768895070321.jpg",
+            "mmexport1768895111989.jpg",
+            "mmexport1768895123043.jpg",
+            "mmexport1768895144921.jpg",
+            "mmexport1768895161712.jpg"
+        ];
+        const HOLE_COUNT = 9; // 9个洞
+        let countdownTime = 60;
+        let countdownTimer = null;
+        let moleTimer = null;
+        let score = {}; // 每个头像的得分：{头像名: 次数}
+        let totalScore = 0;
+        let holes = []; // 洞元素数组
+
+
+        // 初始化洞
+        function initHoles() {
+            holeContainer.innerHTML = '';
+            holes = [];
+            for (let i = 0; i < HOLE_COUNT; i++) {
+                const hole = document.createElement('div');
+                hole.className = 'hole';
+                hole.dataset.active = 'false'; // 标记是否有活跃的地鼠
+                holeContainer.appendChild(hole);
+                holes.push(hole);
+            }
+        }
+
+
+        // 生成随机地鼠
+        function spawnMole(isInitial = false) {
+            // 筛选空闲的洞
+            const freeHoles = holes.filter(hole => hole.dataset.active === 'false');
+            if (freeHoles.length === 0) return;
+
+            // 随机选洞和头像
+            const randomHole = freeHoles[Math.floor(Math.random() * freeHoles.length)];
+            const randomAvatar = AVATAR_LIST[Math.floor(Math.random() * AVATAR_LIST.length)];
+
+            // 创建头像元素
+            const moleImg = document.createElement('img');
+            moleImg.src = randomAvatar;
+            moleImg.className = 'active';
+            moleImg.dataset.name = randomAvatar;
+            randomHole.appendChild(moleImg);
+            randomHole.dataset.active = 'true';
+
+            // 点击头像的逻辑
+            moleImg.addEventListener('click', function() {
+                // 触控效果
+                showTouchEffect(event.clientX, event.clientY);
+                // 播放音效
+                hitSound.currentTime = 0;
+                hitSound.play().catch(err => console.log('音效播放失败:', err));
+                // 计分
+                score[randomAvatar] = (score[randomAvatar] || 0) + 1;
+                totalScore++;
+                // 隐藏头像
+                moleImg.remove();
+                randomHole.dataset.active = 'false';
+            });
+
+            // 自动消失（初始3秒，之后1秒）
+            const disappearTime = isInitial ? 3000 : 1000;
+            setTimeout(() => {
+                if (randomHole.contains(moleImg)) {
+                    moleImg.remove();
+                    randomHole.dataset.active = 'false';
+                }
+            }, disappearTime);
+        }
+
+
+        // 触控效果
+        function showTouchEffect(x, y) {
+            const touchEl = document.createElement('div');
+            touchEl.className = 'touch-effect';
+            touchEl.style.left = `${x}px`;
+            touchEl.style.top = `${y}px`;
+            touchContainer.appendChild(touchEl);
+            
+            setTimeout(() => {
+                touchEl.remove();
+            }, 500);
+        }
+
+
+        // 开始倒计时
+        function startCountdown() {
+            countdownTime = 60;
+            countdownEl.textContent = countdownTime;
+            
+            countdownTimer = setInterval(() => {
+                countdownTime--;
+                countdownEl.textContent = countdownTime;
+                
+                if (countdownTime <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+
+        // 结束游戏
+        function endGame() {
+            // 清除定时器
+            clearInterval(countdownTimer);
+            clearInterval(moleTimer);
+            
+            // 统计结果
+            let topAvatar = '';
+            let topCount = 0;
+            for (const [avatar, count] of Object.entries(score)) {
+                if (count > topCount) {
+                    topCount = count;
+                    topAvatar = avatar;
+                }
+            }
+            // 没有击打时的默认值
+            if (!topAvatar) {
+                topAvatar = AVATAR_LIST[0];
+                topCount = 0;
+            }
+
+            // 更新结果页面
+            topAvatarEl.src = topAvatar;
+            topNameEl.textContent = topAvatar;
+            topCountEl.textContent = topCount;
+            totalCountEl.textContent = totalScore;
+
+            // 切换页面
+            gameScreen.style.display = 'none';
+            resultScreen.style.display = 'flex';
+        }
+
+
+        // 开始游戏
+        startBtn.addEventListener('click', function() {
+            // 重置数据
+            score = {};
+            totalScore = 0;
+            
+            // 切换页面
+            mainScreen.style.display = 'none';
+            gameScreen.style.display = 'block';
+            
+            // 初始化洞
+            initHoles();
+            
+            // 播放背景音乐
+            bgMusic.play().catch(err => console.log('背景音乐播放失败:', err));
+            
+            // 开始倒计时
+            startCountdown();
+            
+            // 生成初始3个地鼠（1秒后）
+            setTimeout(() => {
+                for (let i = 0; i < 3; i++) {
+                    spawnMole(true);
+                }
+                // 之后每2秒生成1个
+                moleTimer = setInterval(() => {
+                    spawnMole();
+                }, 2000);
+            }, 1000);
+        });
+
+
+        // 重新开始
+        restartBtn.addEventListener('click', function() {
+            resultScreen.style.display = 'none';
+            gameScreen.style.display = 'block';
+            
+            // 重置数据
+            score = {};
+            totalScore = 0;
+            
+            // 初始化洞
+            initHoles();
+            
+            // 重新倒计时
+            startCountdown();
+            
+            // 重新生成地鼠
+            setTimeout(() => {
+                for (let i = 0; i < 3; i++) {
+                    spawnMole(true);
+                }
+                moleTimer = setInterval(() => {
+                    spawnMole();
+                }, 2000);
+            }, 1000);
+        });
+
+
+        // 返回大厅
+        backBtn.addEventListener('click', function() {
+            resultScreen.style.display = 'none';
+            mainScreen.style.display = 'flex';
+            
+            // 暂停音乐
+            bgMusic.pause();
+        });
+    </script>
+</body>
+</html>
