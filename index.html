@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>三谋三废盟 - 消除游戏</title>
+    <style>
+        /* 全局样式：黑色主题+圆角正方形UI核心规范，保留所有复杂度 */
+        :root {
+            --main-yellow: #ffd700;
+            --bg-black: #000000;
+            --bg-dark: #222222;
+            --bg-gray: #333333;
+            --text-white: #ffffff;
+            --text-gray: #cccccc;
+            --radius-sm: 4px;
+            --shadow-yellow: 0 0 10px var(--main-yellow);
+            --transition: all 0.2s ease;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: var(--bg-black);
+            color: var(--text-white);
+            overflow: hidden;
+        }
+        #app {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+        /* 页面容器：核心重构，确保初始页强制渲染 */
+        .page {
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .page--active {
+            display: flex !important;
+        }
+        /* 通用按钮样式：圆角正方形，hover动效，保留所有交互 */
+        .btn {
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            background: var(--main-yellow);
+            color: var(--bg-black);
+            font-weight: 700;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
+            box-shadow: var(--shadow-yellow);
+        }
+        .btn--dark {
+            background: var(--bg-gray);
+            color: var(--main-yellow);
+        }
+        .btn--lg {
+            width: 200px;
+            height: 60px;
+            font-size: 24px;
+        }
+        .btn--md {
+            width: 120px;
+            height: 50px;
+            font-size: 18px;
+        }
+        .btn--sm {
+            width: 100px;
+            height: 100px;
+            font-size: 28px;
+        }
+        .btn--popup {
+            width: 150px;
+            height: 60px;
+            font-size: 20px;
+        }
+
+        /* 1. 主页：核心强制显示，黄色91+开始按钮，保留原布局 */
+        .home-page .num-91 {
+            font-size: 80px;
+            color: var(--main-yellow);
+            font-weight: 700;
+            margin-bottom: 80px;
+            text-shadow: var(--shadow-yellow);
+        }
+
+        /* 2. 时间选择页：3个圆角正方形按钮，间距布局保留 */
+        .time-page {
+            gap: 20px;
+        }
+
+        /* 3. 图标介绍页：开场动画，保留图标放大渐变动效 */
+        .intro-page {
+            gap: 40px;
+        }
+        .intro-page .intro-title {
+            font-size: 32px;
+            color: var(--main-yellow);
+            font-weight: 700;
+        }
+        .intro-page .intro-icon {
+            width: 120px;
+            height: 120px;
+            border-radius: var(--radius-sm);
+            object-fit: cover;
+            animation: introFade 1s ease-in-out;
+        }
+        @keyframes introFade {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.1); }
+        }
+
+        /* 4. 游戏主界面：保留所有状态栏/网格/控制栏布局，UI复杂度拉满 */
+        .game-page {
+            justify-content: flex-start;
+            gap: 15px;
+            padding-top: 10px;
+        }
+        .game-page .game-title {
+            font-size: 32px;
+            color: var(--main-yellow);
+            font-weight: 700;
+            text-shadow: var(--shadow-yellow);
+        }
+        /* 状态栏：圆角正方形背景，左右分栏，保留原样式 */
+        .game-page .status-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-dark);
+            border-radius: var(--radius-sm);
+            padding: 10px 20px;
+        }
+        .game-page .status-item {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .game-page .status-item span {
+            color: var(--main-yellow);
+            margin-left: 5px;
+        }
+        /* 8×8游戏网格：核心圆角正方形布局，间距/背景保留，固定宽高适配 */
+        .game-page #gameGrid {
+            width: 100%;
+            aspect-ratio: 1/1;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 4px;
+            background: var(--bg-dark);
+            border-radius: var(--radius-sm);
+            padding: 4px;
+        }
+        /* 图标项：圆角正方形，拖拽放大/阴影，保留所有交互样式 */
+        .game-page .icon-item {
+            width: 100%;
+            height: 100%;
+            background: var(--bg-gray);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            transition: var(--transition);
+            position: relative;
+        }
+        .game-page .icon-item img {
+            width: 80%;
+            height: 80%;
+            object-fit: cover;
+            border-radius: 2px;
+        }
+        .game-page .icon-item--grabbing {
+            cursor: grabbing;
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: var(--shadow-yellow);
+        }
+        .game-page .icon-item--fade {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+        .game-page .icon-item--fall {
+            transition: transform 0.3s ease;
+        }
+        /* 游戏控制栏：两个圆角正方形按钮，间距保留 */
+        .game-page .control-bar {
+            display: flex;
+            gap: 20px;
+        }
+
+        /* 暂停遮罩：全屏半透明，圆角按钮，保留原UI */
+        #pauseMask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 99;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+        }
+        #pauseMask .pause-title {
+            font-size: 40px;
+            color: var(--main-yellow);
+            font-weight: 700;
+        }
+
+        /* 结束弹窗：全屏半透明，统计信息+双按钮，保留所有UI复杂度 */
+        #endPopup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 99;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+            padding: 20px;
+        }
+        #endPopup .end-title {
+            font-size: 40px;
+            color: var(--main-yellow);
+            font-weight: 700;
+            text-shadow: var(--shadow-yellow);
+        }
+        #endPopup .end-stat {
+            font-size: 22px;
+            color: var(--text-white);
+            text-align: center;
+        }
+        #endPopup .end-stat span {
+            color: var(--main-yellow);
+            font-weight: 700;
+        }
+        #endPopup .end-icon-desc {
+            font-size: 18px;
+            color: var(--text-gray);
+            margin-top: 5px;
+        }
+        #endPopup .popup-btn-group {
+            display: flex;
+            gap: 20px;
+        }
+
+        /* 移动端适配：保留所有UI，仅缩放网格/字体，不降低复杂度 */
+        @media (max-width: 420px) {
+            .home-page .num-91 {
+                font-size: 70px;
+                margin-bottom: 60px;
+            }
+            .game-page .game-title {
+                font-size: 28px;
+            }
+            .game-page .status-item {
+                font-size: 18px;
+            }
+            .btn--sm {
+                width: 90px;
+                height: 90px;
+                font-size: 24px;
+            }
+            .btn--md {
+                width: 100px;
+                height: 45px;
+                font-size: 16px;
+            }
+            .btn--popup {
+                width: 130px;
+                height: 55px;
+                font-size: 18px;
+            }
+            #endPopup .end-title {
+                font-size: 32px;
+            }
+            #endPopup .end-stat {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 根容器：确保所有元素在可视区域，彻底解决渲染问题 -->
+    <div id="app">
+        <!-- 1. 主页【默认激活，强制显示，彻底解决黑屏】 -->
+        <div class="page home-page page--active" id="homePage">
+            <div class="num-91">91</div>
+            <button class="btn btn--lg" onclick="switchPage('timePage')">开始游戏</button>
+        </div>
+
+        <!-- 2. 时间选择页 -->
+        <div class="page time-page" id="timePage">
+            <button class="btn btn--sm" onclick="startGame(30)">30秒</button>
+            <button class="btn btn--sm" onclick="startGame(60)">60秒</button>
+            <button class="btn btn--sm" onclick="startGame(120)">120秒</button>
+        </div>
+
+        <!-- 3. 图标介绍页（开场动画） -->
+        <div class="page intro-page" id="introPage">
+            <div class="intro-title">图标介绍</div>
+            <img src="" alt="游戏图标" class="intro-icon" id="introIcon">
+        </div>
+
+        <!-- 4. 游戏主界面 -->
+        <div class="page game-page" id="gamePage">
+            <div class="game-title">三谋三废盟</div>
+            <div class="status-bar">
+                <div class="status-item">分数：<span id="scoreNum">0</span></div>
+                <div class="status-item">时间：<span id="timeNum">0</span>s</div>
+            </div>
+            <div id="gameGrid"></div>
+            <div class="control-bar">
+                <button class="btn btn--md" onclick="pauseGame()">暂停</button>
+                <button class="btn btn--md" onclick="restartGame()">重新开始</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 暂停遮罩 -->
+    <div id="pauseMask">
+        <div class="pause-title">游戏暂停</div>
+        <button class="btn btn--md" onclick="resumeGame()">继续游戏</button>
+        <button class="btn btn--md" onclick="restartGame()">重新开始</button>
+    </div>
+
+    <!-- 结束弹窗 -->
+    <div id="endPopup">
+        <div class="end-title">游戏结束！</div>
+        <div class="end-stat">总消除次数：<span id="totalElim">0</span></div>
+        <div class="end-stat">消除最多：<span id="maxIconName">后宫</span></div>
+        <div class="end-icon-desc" id="maxIconDesc">武勋仔</div>
+        <div class="end-stat"><span id="maxIconCount">0</span>次（占比<span id="maxIconRate">0</span>%）</div>
+        <div class="popup-btn-group">
+            <button class="btn btn--popup btn--dark" onclick="switchPage('homePage')">返回主页</button>
+            <button class="btn btn--popup" onclick="restartGame()">重新游戏</button>
+        </div>
+    </div>
+
+    <!-- 音频资源：正确闭合标签，预加载，纯文件名 -->
+    <audio id="bgmAudio" src="音频编辑 1.mp3" loop preload="auto">
+    <audio id="elimAudio" src="打地鼠.mp3" preload="auto">
+
+    <script>
+        // ===================== 全局配置：文件路径/游戏常量（纯文件名+jpg后缀，一字不差） =====================
+        const ICON_CONFIG = [
+            { name: '后宫', src: 'Screenshot_20260206_180228_edit_350532787241698.jpg', desc: '武勋仔' },
+            { name: '天府', src: 'Screenshot_20260206_180235_edit_350589870022040.jpg', desc: '村野匹夫' },
+            { name: '云水楼', src: 'Screenshot_20260206_180203_edit_350617019664426.jpg', desc: '唐氏儿' }
+        ];
+        const GAME_ROWS = 8; // 8行
+        const GAME_COLS = 8; // 8列
+        const BASE_SCORE = 10; // 基础分/个
+        const COMBO_SCORE = 5; // 连击加分/次
+
+        // ===================== 游戏状态：全局唯一，初始化所有参数 =====================
+        let gameState = {
+            gameTime: 120,    // 总时长
+            remainTime: 120,  // 剩余时间
+            score: 0,         // 当前分数
+            combo: 0,         // 连击数
+            iconElimCount: [0, 0, 0], // 三个图标各自消除次数
+            totalElimCount: 0,// 总消除次数
+            isPlaying: false, // 是否在游戏中
+            isPaused: false,  // 是否暂停
+            timer: null,      // 倒计时定时器
+            selectedIcon: null,// 选中的图标元素
+            gameGrid: [],     // 8x8网格数据 [[0,1,2], ...]
+        };
+
+        // ===================== 获取DOM元素：一次性获取，避免重复查询导致的错误 =====================
+        const dom = {
+            // 页面
+            homePage: document.getElementById('homePage'),
+            timePage: document.getElementById('timePage'),
+            introPage: document.getElementById('introPage'),
+            gamePage: document.getElementById('gamePage'),
+            // 游戏核心
+            gameGrid: document.getElementById('gameGrid'),
+            scoreNum: document.getElementById('scoreNum'),
+            timeNum: document.getElementById('timeNum'),
+            introIcon: document.getElementById('introIcon'),
+            // 遮罩/弹窗
+            pauseMask: document.getElementById('pauseMask'),
+            endPopup: document.getElementById('endPopup'),
+            // 结束统计
+            totalElim: document.getElementById('totalElim'),
+            maxIconName: document.getElementById('maxIconName'),
+            maxIconDesc: document.getElementById('maxIconDesc'),
+            maxIconCount: document.getElementById('maxIconCount'),
+            maxIconRate: document.getElementById('maxIconRate'),
+            // 音频
+            bgm: document.getElementById('bgmAudio'),
+            elimSound: document.getElementById('elimAudio')
+        };
+
+        // ===================== 初始化：页面加载完成后执行，解决所有渲染/交互问题 =====================
+        window.onload = function() {
+            // 解决浏览器音频自动播放限制：首次点击页面播放BGM
+            document.addEventListener('click', () => {
+                dom.bgm.play().catch(err => console.log('BGM播放失败：', err));
+            }, { once: true });
+            // 确保主页强制激活（彻底解决黑屏）
+            switchPage('homePage', true);
+        };
+
+        // ===================== 核心通用方法：页面切换/音频播放 =====================
+        /**
+         * 页面切换方法
+         * @param {string} pageId 页面ID
+         * @param {boolean} force 强制激活
+         */
+        function switchPage(pageId, force = false) {
+            // 隐藏所有页面
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('page--active'));
+            // 显示目标页面
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.add('page--active');
+            }
+            // 强制暂停游戏（切主页/时间页时）
+            if (force) {
+                gameState.isPlaying = false;
+                gameState.isPaused = false;
+                clearInterval(gameState.timer);
+                dom.pauseMask.style.display = 'none';
+                dom.endPopup.style.display = 'none';
+                dom.bgm.pause();
+            }
+        }
+
+        /**
+         * 播放音效方法
+         * @param {HTMLAudioElement} audio 音频元素
+         */
+        function playSound(audio) {
+            audio.currentTime = 0;
+            audio.play().catch(err => console.log('音效播放失败：', err));
+        }
+
+        // ===================== 游戏核心方法：初始化/生成网格/创建图标 =====================
+        /**
+         * 开始游戏：先执行图标介绍动画，再初始化游戏
+         * @param {number} time 游戏时长（30/60/120）
+         */
+        function startGame(time) {
+            // 更新游戏时长
+            gameState.gameTime = time;
+            gameState.remainTime = time;
+            dom.timeNum.innerText = time;
+            // 显示图标介绍页
+            switchPage('introPage');
+            // 依次展示三个图标（3秒动画）
+            let iconIndex = 0;
+            dom.introIcon.src = ICON_CONFIG[iconIndex].src;
+            const introTimer = setInterval(() => {
+                iconIndex++;
+                if (iconIndex >= ICON_CONFIG.length) {
+                    clearInterval(introTimer);
+                    // 初始化游戏并显示游戏页
+                    initGame();
+                    switchPage('gamePage');
+                } else {
+                    dom.introIcon.src = ICON_CONFIG[iconIndex].src;
+                }
+            }, 1000);
+            // 播放BGM
+            dom.bgm.play();
+        }
+
+        /**
+         * 初始化游戏：重置状态+生成网格+启动倒计时
+         */
+        function initGame() {
+            // 重置所有游戏状态
+            gameState.score = 0;
+            gameState.combo = 0;
+            gameState.iconElimCount = [0, 0, 0];
+            gameState.totalElimCount = 0;
+            gameState.isPlaying = true;
+            gameState.isPaused = false;
+            gameState.selectedIcon = null;
+            // 更新UI
+            dom.scoreNum.innerText = 0;
+            dom.timeNum.innerText = gameState.remainTime;
+            // 生成游戏网格
+            generateGameGrid();
+            // 启动倒计时
+            clearInterval(gameState.timer);
+            gameState.timer = setInterval(() => {
+                if (!gameState.isPaused) {
+                    gameState.remainTime--;
+                    dom.timeNum.innerText = gameState.remainTime;
+                    // 时间到，游戏结束
+                    if (gameState.remainTime <= 0) {
+                        gameOver();
+                    }
+                }
+            }, 1000);
+        }
+
+        /**
+         * 生成8x8游戏网格：数据+DOM，避免初始可消除组合
+         */
+        function generateGameGrid() {
+            // 清空网格DOM和数据
+            dom.gameGrid.innerHTML = '';
+            gameState.gameGrid = [];
+            // 生成随机8x8数据
+            for (let i = 0; i < GAME_ROWS; i++) {
+                gameState.gameGrid[i] = [];
+                for (let j = 0; j < GAME_COLS; j++) {
+                    gameState.gameGrid[i][j] = Math.floor(Math.random() * 3);
+                }
+            }
+            // 检查是否有初始可消除组合，有则重新生成
+            while (checkEliminate().hasElim) {
+                regenerateGridData();
+            }
+            // 渲染网格DOM
+            for (let i = 0; i < GAME_ROWS; i++) {
+                for (let j = 0; j < GAME_COLS; j++) {
+                    createIconItem(i, j);
+                }
+            }
+        }
+
+        /**
+         * 重新生成网格数据（仅数据，不渲染DOM）
+         */
+        function regenerateGridData() {
+            for (let i = 0; i < GAME_ROWS; i++) {
+                for (let j = 0; j < GAME_COLS; j++) {
+                    gameState.gameGrid[i][j] = Math.floor(Math.random() * 3);
+                }
+            }
+        }
+
+        /**
+         * 创建单个图标DOM元素：绑定拖拽/触摸事件，保留所有交互样式
+         * @param {number} row 行号
+         * @param {number} col 列号
+         */
+        function createIconItem(row, col) {
+            const iconType = gameState.gameGrid[row][col];
+            const iconItem = document.createElement('div');
+            // 设置类名和属性
+            iconItem.className = 'icon-item';
+            iconItem.dataset.row = row;
+            iconItem.dataset.col = col;
+            // 设置图标图片
+            iconItem.innerHTML = `<img src="${ICON_CONFIG[iconType].src}" alt="${ICON_CONFIG[iconType].name}">`;
+            // 鼠标拖拽事件
+            iconItem.addEventListener('mousedown', (e) => {
+                if (!gameState.isPlaying || gameState.isPaused) return;
+                gameState.selectedIcon = e.target.closest('.icon-item');
+                gameState.selectedIcon.classList.add('icon-item--grabbing');
+            });
+            // 触摸拖拽事件（移动端）
+            iconItem.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (!gameState.isPlaying || gameState.isPaused) return;
+                gameState.selectedIcon = e.target.closest('.icon-item');
+                gameState.selectedIcon.classList.add('icon-item--grabbing');
+            });
+            // 添加到网格
+            dom.gameGrid.appendChild(iconItem);
+        }
+
+        // ===================== 游戏交互：拖拽交换/相邻判断/消除检查 =====================
+        // 鼠标松开/触摸结束：处理交换逻辑（全局事件，避免元素遮挡）
+        document.addEventListener('mouseup', handleIconSwap);
+        document.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            handleIconSwap(e);
+        });
+
+        /**
+         * 处理图标交换逻辑
+         * @param {Event} e 事件对象
+         */
+        function handleIconSwap(e) {
+            if (!gameState.selectedIcon || !gameState.isPlaying || gameState.isPaused) {
+                // 无选中/非游戏中/暂停，移除选中样式
+                if (gameState.selectedIcon) {
+                    gameState.selectedIcon.classList.remove('icon-item--grabbing');
+                }
+                gameState.selectedIcon = null;
+                return;
+            }
+            // 获取目标图标
+            const targetIcon = e.target.closest('.icon-item');
+            // 目标不存在/选中自身，移除选中样式
+            if (!targetIcon || gameState.selectedIcon === targetIcon) {
+                gameState.selectedIcon.classList.remove('icon-item--grabbing');
+                gameState.selectedIcon = null;
+                return;
+            }
+            // 判断是否相邻（上下左右）
+            if (isAdjacent(gameState.selectedIcon, targetIcon)) {
+                // 交换图标
+                swapIcon(gameState.selectedIcon, targetIcon);
+            } else {
+                // 不相邻，移除选中样式
+                gameState.selectedIcon.classList.remove('icon-item--grabbing');
+                gameState.selectedIcon = null;
+            }
+        }
+
+        /**
+         * 判断两个图标是否相邻（上下左右）
+         * @param {HTMLElement} a 图标A
+         * @param {HTMLElement} b 图标B
+         * @returns {boolean} 是否相邻
+         */
+        function isAdjacent(a, b) {
+            const aRow = Number(a.dataset.row);
+            const aCol = Number(a.dataset.col);
+            const bRow = Number(b.dataset.row);
+            const bCol = Number(b.dataset.col);
+            // 同行相邻列 || 同列相邻行
+            return (aRow === bRow && Math.abs(aCol - bCol) === 1) || (aCol === bCol && Math.abs(aRow - bRow) === 1);
+        }
+
+        /**
+         * 交换两个图标：数据+DOM，检查消除，无效则复原
+         * @param {HTMLElement} a 图标A
+         * @param {HTMLElement} b 图标B
+         */
+        function swapIcon(a, b) {
+            const aRow = Number(a.dataset.row);
+            const aCol = Number(a.dataset.col);
+            const bRow = Number(b.dataset.row);
+            const bCol = Number(b.dataset.col);
+            // 1. 交换网格数据
+            [gameState.gameGrid[aRow][aCol], gameState.gameGrid[bRow][bCol]] = [gameState.gameGrid[bRow][bCol], gameState.gameGrid[aRow][aCol]];
+            // 2. 交换DOM内容（图片）
+            [a.innerHTML, b.innerHTML] = [b.innerHTML, a.innerHTML];
+            // 3. 检查是否有消除组合
+            const elimResult = checkEliminate();
+            if (!elimResult.hasElim) {
+                // 无消除，延迟复原（视觉反馈）
+                setTimeout(() => {
+                    [gameState.gameGrid[aRow][aCol], gameState.gameGrid[bRow][bCol]] = [gameState.gameGrid[bRow][bCol], gameState.gameGrid[aRow][aCol]];
+                    [a.innerHTML, b.innerHTML] = [b.innerHTML, a.innerHTML];
+                    // 复原选中样式
+                    a.classList.remove('icon-item--grabbing');
+                    b.classList.remove('icon-item--grabbing');
+                }, 200);
+                // 重置连击
+                gameState.combo = 0;
+            } else {
+                // 有消除，处理消除逻辑
+                handleEliminate(elimResult.elimPos);
+                // 移除选中样式
+                a.classList.remove('icon-item--grabbing');
+                b.classList.remove('icon-item--grabbing');
+            }
+            // 清空选中图标
+            gameState.selectedIcon = null;
+        }
+
+        /**
+         * 检查网格中可消除的组合
+         * @returns {object} {hasElim: 是否有消除, elimPos: 消除位置数组[[row,col],...]}
+         */
+        function checkEliminate() {
+            const elimPosSet = new Set(); // 用Set避免重复位置
+            // 检查横向消除（一行中连续3个及以上）
+            for (let i = 0; i < GAME_ROWS; i++) {
+                for (let j = 0; j < GAME_COLS - 2; j++) {
+                    const curType = gameState.gameGrid[i][j];
+                    if (curType === gameState.gameGrid[i][j+1] && curType === gameState.gameGrid[i][j+2]) {
+                        // 加入连续3个的位置
+                        elimPosSet.add(`${i},${j}`);
+                        elimPosSet.add(`${i},${j+1}`);
+                        elimPosSet.add(`${i},${j+2}`);
+                        // 检查是否有更多连续的
+                        let k = j + 3;
+                        while (k < GAME_COLS && gameState.gameGrid[i][k] === curType) {
+                            elimPosSet.add(`${i},${k}`);
+                            k++;
+                        }
+                    }
+                }
+            }
+            // 检查纵向消除（一列中连续3个及以上）
+            for (let j = 0; j < GAME_COLS; j++) {
+                for (let i = 0; i < GAME_ROWS - 2; i++) {
+                    const curType = gameState.gameGrid[i][j];
+                    if (curType === gameState.gameGrid[i+1][j] && curType === gameState.gameGrid[i+2][j]) {
+                        // 加入连续3个的位置
+                        elimPosSet.add(`${i},${j}`);
+                        elimPosSet.add(`${i+1},${j}`);
+                        elimPosSet.add(`${i+2},${j}`);
+                        // 检查是否有更多连续的
+                        let k = i + 3;
+                        while (k < GAME_ROWS && gameState.gameGrid[k][j] === curType) {
+                            elimPosSet.add(`${k},${j}`);
+                            k++;
+                        }
+                    }
+                }
+            }
+            // 转换为数组
+            const elimPosArr = Array.from(elimPosSet).map(pos => pos.split(',').map(Number));
+            return {
+                hasElim: elimPosArr.length > 0,
+                elimPos: elimPosArr
+            };
+        }
+
+        // ===================== 游戏核心：消除处理/掉落填充/连锁消除/洗牌 =====================
+        /**
+         * 处理消除逻辑：播放音效+统计次数+计算分数+隐藏图标+掉落填充
+         * @param {array} elimPos 消除位置数组[[row,col],...]
+         */
+        function handleEliminate(elimPos) {
+            if (!gameState.isPlaying) return;
+            // 播放消除音效
+            playSound(dom.elimSound);
+            // 统计消除次数
+            const elimCountMap = [0, 0, 0];
+            elimPos.forEach(([row, col]) => {
+                const iconType = gameState.gameGrid[row][col];
+                elimCountMap[iconType]++;
+                // 标记为空白（-1）
+                gameState.gameGrid[row][col] = -1;
+                // 隐藏消除的图标（视觉动画）
+                const iconItem = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                if (iconItem) {
+                    iconItem.classList.add('icon-item--fade');
+                }
+            });
+            // 更新全局统计
+            gameState.iconElimCount = gameState.iconElimCount.map((v, i) => v + elimCountMap[i]);
+            gameState.totalElimCount += elimPos.length;
+            // 计算分数：基础分 + 连击分
+            gameState.combo++;
+            const addScore = elimPos.length * BASE_SCORE + gameState.combo * COMBO_SCORE;
+            gameState.score += addScore;
+            dom.scoreNum.innerText = gameState.score;
+            // 延迟掉落填充（等待消除动画完成，300ms）
+            setTimeout(() => {
+                fallAndFillGrid();
+            }, 300);
+        }
+
+        /**
+         * 图标掉落+填充空白：逐列处理+生成新图标+渲染掉落动画+检查连锁消除
+         */
+        function fallAndFillGrid() {
+            for (let j = 0; j < GAME_COLS; j++) {
+                const colData = [];
+                // 1. 收集当前列非空白的图标数据
+                for (let i = 0; i < GAME_ROWS; i++) {
+                    if (gameState.gameGrid[i][j] !== -1) {
+                        colData.push(gameState.gameGrid[i][j]);
+                    }
+                }
+                // 2. 计算空白数，顶部生成新图标填充
+                const emptyNum = GAME_ROWS - colData.length;
+                for (let i = 0; i < emptyNum; i++) {
+                    colData.unshift(Math.floor(Math.random() * 3));
+                }
+                // 3. 更新网格数据
+                for (let i = 0; i < GAME_ROWS; i++) {
+                    gameState.gameGrid[i][j] = colData[i];
+                }
+                // 4. 渲染掉落动画+更新图标图片
+                for (let i = 0; i < GAME_ROWS; i++) {
+                    const iconItem = document.querySelector(`[data-row="${i}"][data-col="${j}"]`);
+                    if (iconItem) {
+                        // 移除消除样式，添加掉落样式
+                        iconItem.classList.remove('icon-item--fade');
+                        iconItem.classList.add('icon-item--fall');
+                        // 掉落动画（向下移动emptyNum*50px）
+                        iconItem.style.transform = `translateY(${emptyNum * 50}px)`;
+                        // 延迟复位并更新图片
+                        setTimeout(() => {
+                            const iconType = gameState.gameGrid[i][j];
+                            iconItem.innerHTML = `<img src="${ICON_CONFIG[iconType].src}" alt="${ICON_CONFIG[iconType].name}">`;
+                            iconItem.style.transform = 'translateY(0)';
+                        }, 100);
+                        // 移除掉落样式
+                        setTimeout(() => {
+                            iconItem.classList.remove('icon-item--fall');
+                        }, 300);
+                    }
+                }
+            }
+            // 5. 掉落完成后检查连锁消除（400ms）
+            setTimeout(() => {
+                const elimResult = checkEliminate();
+                if (elimResult.hasElim) {
+                    // 有连锁消除，递归处理
+                    handleEliminate(elimResult.elimPos);
+                } else {
+                    // 无连锁消除，重置连击
+                    gameState.combo = 0;
+                    // 检查是否有有效移动，无则洗牌
+                    if (!hasValidMove()) {
+                        reshuffleGrid();
+                    }
+                }
+            }, 400);
+        }
+
+        /**
+         * 检查是否有有效移动（可交换形成消除）
+         * @returns {boolean} 是否有有效移动
+         */
+        function hasValidMove() {
+            // 临时交换相邻图标，检查是否消除
+            for (let i = 0; i < GAME_ROWS; i++) {
+                for (let j = 0; j < GAME_COLS; j++) {
+                    // 交换右侧图标
+                    if (j < GAME_COLS - 1) {
+                        [gameState.gameGrid[i][j], gameState.gameGrid[i][j+1]] = [gameState.gameGrid[i][j+1], gameState.gameGrid[i][j]];
+                        if (checkEliminate().hasElim) {
+                            [gameState.gameGrid[i][j], gameState.gameGrid[i][j+1]] = [gameState.gameGrid[i][j+1], gameState.gameGrid[i][j]];
+                            return true;
+                        }
+                        [gameState.gameGrid[i][j], gameState.gameGrid[i][j+1]] = [gameState.gameGrid[i][j+1], gameState.gameGrid[i][j]];
+                    }
+                    // 交换下侧图标
+                    if (i < GAME_ROWS - 1) {
+                        [gameState.gameGrid[i][j], gameState.gameGrid[i+1][j]] = [gameState.gameGrid[i+1][j], gameState.gameGrid[i][j]];
+                        if (checkEliminate().hasElim) {
+                            [gameState.gameGrid[i][j], gameState.gameGrid[i+1][j]] = [gameState.gameGrid[i+1][j], gameState.gameGrid[i][j]];
+                            return true;
+                        }
+                        [gameState.gameGrid[i][j], gameState.gameGrid[i+1][j]] = [gameState.gameGrid[i+1][j], gameState.gameGrid[i][j]];
+                    }
+                }
+            }
+            return false;
+        }
+
+        /**
+         * 洗牌：重新生成网格数据+渲染DOM，避免无有效移动
+         */
+        function reshuffleGrid() {
+            // 重新生成数据
+            regenerateGridData();
+            // 检查是否有消除/有效移动，有则重新生成
+            while (checkEliminate().hasElim || !hasValidMove()) {
+                regenerateGridData();
+            }
+            // 渲染新网格
+            dom.gameGrid.innerHTML = '';
+            for (let i = 0; i < GAME_ROWS; i++) {
+                for (let j = 0; j < GAME_COLS; j++) {
+                    createIconItem(i, j);
+                }
+            }
+        }
+
+        // ===================== 游戏控制：暂停/继续/重新开始/游戏结束 =====================
+        /**
+         * 暂停游戏
+         */
+        function pauseGame() {
+            if (!gameState.isPlaying || gameState.isPaused) return;
+            gameState.isPaused = true;
+            dom.pauseMask.style.display = 'flex';
+            dom.bgm.pause();
+        }
+
+        /**
+         * 继续游戏
+         */
+        function resumeGame() {
+            if (!gameState.isPlaying || !gameState.isPaused) return;
+            gameState.isPaused = false;
+            dom.pauseMask.style.display = 'none';
+            dom.bgm.play();
+        }
+
+        /**
+         * 重新开始游戏
+         */
+        function restartGame() {
+            gameState.isPaused = false;
+            dom.pauseMask.style.display = 'none';
+            dom.endPopup.style.display = 'none';
+            // 重新初始化游戏
+            initGame();
+            // 播放BGM
+            dom.bgm.play();
+        }
+
+        /**
+         * 游戏结束：停止定时器+暂停BGM+计算统计+显示结束弹窗
+         */
+        function gameOver() {
+            gameState.isPlaying = false;
+            clearInterval(gameState.timer);
+            dom.bgm.pause();
+            // 计算统计数据
+            const total = gameState.totalElimCount;
+            const maxCount = Math.max(...gameState.iconElimCount);
+            const maxIndex = gameState.iconElimCount.indexOf(maxCount);
+            const rate = total === 0 ? 0 : Math.round((maxCount / total) * 100);
+            // 更新结束弹窗UI
+            dom.totalElim.innerText = total;
+            dom.maxIconName.innerText = ICON_CONFIG[maxIndex].name;
+            dom.maxIconDesc.innerText = ICON_CONFIG[maxIndex].desc;
+            dom.maxIconCount.innerText = maxCount;
+            dom.maxIconRate.innerText = rate;
+            // 显示结束弹窗
+            dom.endPopup.style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
