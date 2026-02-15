@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>后宫·天府·云水楼 · 打地鼠</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background: #2b1b0e;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', '微软雅黑', sans-serif;
+            padding: 12px;
+            margin: 0;
+        }
+        .game-container {
+            width: 100%;
+            max-width: 420px;
+            background: #ecd8b4;
+            border-radius: 48px 48px 32px 32px;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.6);
+            padding: 24px 20px 30px;
+            position: relative;
+            border: 4px solid #aa7e5a;
+        }
+        /* 通用界面切换 */
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .active-screen {
+            display: flex;
+        }
+        /* 主页 */
+        .home-screen .big-91 {
+            font-size: 130px;
+            font-weight: 900;
+            color: #4d2e1b;
+            text-shadow: 6px 6px 0 #e2b48c, 10px 10px 20px rgba(0,0,0,0.3);
+            line-height: 1;
+            margin: 30px 0 20px;
+            letter-spacing: -5px;
+        }
+        .home-screen .start-btn {
+            background: #b22222;
+            color: #ffecb3;
+            font-size: 42px;
+            font-weight: bold;
+            padding: 16px 40px;
+            border-radius: 60px;
+            border: 4px solid #ffdb9d;
+            box-shadow: 0 8px 0 #5a2e1a, 0 12px 16px #3f2a17;
+            margin: 20px 0 40px;
+            transition: 0.06s linear;
+            width: fit-content;
+        }
+        .home-screen .start-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #5a2e1a, 0 8px 12px #3f2a17;
+        }
+        /* 难度选择 */
+        .difficulty-screen h2 {
+            font-size: 36px;
+            color: #2d1a0c;
+            margin: 20px 0 30px;
+            text-decoration: underline wavy #b57c48 3px;
+        }
+        .difficulty-btn {
+            background: #f3d9b1;
+            width: 100%;
+            padding: 20px 0;
+            margin: 12px 0;
+            font-size: 40px;
+            font-weight: bold;
+            color: #442b16;
+            border-radius: 50px;
+            border: 3px solid #b37b4a;
+            box-shadow: 0 6px 0 #7b5837, 0 8px 12px black;
+            text-align: center;
+            transition: 0.05s linear;
+        }
+        .difficulty-btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 1px 0 #7b5837, 0 5px 8px black;
+        }
+        .back-home-small {
+            margin-top: 30px;
+            background: #ad7a55;
+            color: #ffefcf;
+            padding: 12px 30px;
+            border-radius: 40px;
+            font-size: 24px;
+            font-weight: bold;
+            border: 2px solid #e3b48b;
+            box-shadow: 0 4px 0 #533e2a;
+            transition: 0.05s linear;
+        }
+        .back-home-small:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+        /* 游戏界面 */
+        .game-screen .stats {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            background: #311e0f;
+            color: #f7e7c8;
+            padding: 12px 18px;
+            border-radius: 40px;
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border: 2px solid #cf9f6e;
+        }
+        .grid-9 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            background: #7b5a3c;
+            padding: 20px 14px;
+            border-radius: 36px;
+            border: 5px solid #4f321c;
+            box-shadow: inset 0 0 0 2px #b59065;
+        }
+        .cell {
+            aspect-ratio: 1 / 1;
+            background: #d4b185;
+            border-radius: 18px;
+            box-shadow: inset 0 -4px 0 #634f36, 0 6px 0 #3d2c19;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 6px;
+            transition: 0.05s;
+        }
+        .cell img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.5));
+            pointer-events: none;
+        }
+        .cell:active {
+            transform: scale(0.96);
+            box-shadow: inset 0 -2px 0 #4d3923, 0 3px 0 #2f1f10;
+        }
+        /* 弹窗模态 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+        .result-box {
+            background: #fcebd1;
+            max-width: 380px;
+            width: 90%;
+            border-radius: 60px 60px 40px 40px;
+            border: 6px solid #b7814e;
+            padding: 30px 20px 25px;
+            text-align: center;
+            box-shadow: 0 20px 30px black;
+        }
+        .result-box .total-hits {
+            font-size: 42px;
+            font-weight: 800;
+            background: #4f2e16;
+            color: #ffd78c;
+            padding: 12px 10px;
+            border-radius: 60px;
+            margin-bottom: 25px;
+            border: 3px solid #e3b076;
+        }
+        .top-icon-info {
+            background: #b4814a;
+            border-radius: 40px;
+            padding: 20px 10px;
+            color: #2d1406;
+            margin-bottom: 20px;
+            border: 3px solid #ffd89c;
+        }
+        .top-icon-name {
+            font-size: 46px;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+        .top-subtitle {
+            font-size: 32px;
+            font-weight: 600;
+            color: #f7efd6;
+            text-shadow: 2px 2px 0 #5b301a;
+        }
+        .top-hit-count {
+            font-size: 40px;
+            background: #1f1308;
+            display: inline-block;
+            padding: 6px 30px;
+            border-radius: 40px;
+            color: #fdd78c;
+            margin: 12px 0 8px;
+            border: 2px solid gold;
+        }
+        .result-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .result-btn {
+            background: #8b5e3c;
+            color: #faeacb;
+            font-size: 36px;
+            font-weight: bold;
+            padding: 10px 25px;
+            border-radius: 50px;
+            border: 3px solid #fbc98b;
+            box-shadow: 0 5px 0 #412e1b;
+            transition: 0.05s;
+            flex: 1;
+        }
+        .result-btn:active {
+            transform: translateY(5px);
+            box-shadow: none;
+        }
+        /* 通用文字 */
+        .small-note {
+            font-size: 24px;
+            color: #392613;
+        }
+        .hidden {
+            display: none;
+        }
+        button, .difficulty-btn, .start-btn, .back-home-small, .result-btn {
+            cursor: pointer;
+        }
+        footer {
+            color: #af8f68;
+            margin-top: 10px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <!-- 主页 显示91 & 开始游戏 -->
+    <div class="screen home-screen active-screen" id="homeScreen">
+        <div class="big-91">91</div>
+        <div class="start-btn" id="startGameBtn">开始游戏</div>
+        <footer>⚡ 武勋仔·村野匹夫·唐氏儿 ⚡</footer>
+    </div>
+
+    <!-- 难度选择 30/60/120秒 + 返回主页 -->
+    <div class="screen difficulty-screen" id="difficultyScreen">
+        <h2>⏳ 选难度</h2>
+        <div class="difficulty-btn" data-time="30">30 秒</div>
+        <div class="difficulty-btn" data-time="60">60 秒</div>
+        <div class="difficulty-btn" data-time="120">120 秒</div>
+        <div class="back-home-small" id="backFromDifficulty">🏠 主页</div>
+    </div>
+
+    <!-- 九宫格游戏界面 -->
+    <div class="screen game-screen" id="gameScreen">
+        <div class="stats">
+            <span id="timerDisplay">30s</span>
+            <span id="hitsDisplay">💥 0</span>
+        </div>
+        <div class="grid-9" id="nineGrid">
+            <!-- 动态生成9个格子 -->
+        </div>
+        <div style="margin-top: 15px; color: #523f2b; font-size: 22px;">最多同时出现3只</div>
+    </div>
+</div>
+
+<!-- 结果弹窗 overlay -->
+<div class="modal-overlay" id="resultModal">
+    <div class="result-box">
+        <div class="total-hits" id="totalHitsText">一共 0 次</div>
+        <div class="top-icon-info">
+            <div class="top-icon-name" id="topIconName">后宫</div>
+            <div class="top-subtitle" id="topSubtitle">武勋仔</div>
+            <div class="top-hit-count" id="topHitCount">0 次</div>
+        </div>
+        <div class="result-actions">
+            <div class="result-btn" id="restartGameBtn">重现游戏</div>
+            <div class="result-btn" id="backHomeBtn">回到主页</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- 固定路径资源 (严格按照用户提供的名称) ----------
+        const IMAGES = {
+            '后宫': 'Screenshot_20260206_180228_edit_350532787241698.jpg',
+            '天府': 'Screenshot_20260206_180235_edit_350589870022040.jpg',
+            '云水楼': 'Screenshot_20260206_180203_edit_350617019664426.jpg'
+        };
+        const SUBTITLE = {
+            '后宫': '武勋仔',
+            '天府': '村野匹夫',
+            '云水楼': '唐氏儿'
+        };
+        const BG_MUSIC = '音频编辑1.mp3';          // 背景音乐
+        const HIT_SOUND = '打地鼠.mp3';            // 击打音效
+
+        // ---------- 全局变量 ----------
+        let currentDifficulty = 30;                // 默认30秒
+        let totalHits = 0;                         // 总击打次数
+        let hitCount = { '后宫': 0, '天府': 0, '云水楼': 0 }; // 各图标被打次数
+        let timerInterval = null;
+        let refreshInterval = null;
+        let timeLeft = 30;
+        let isGameActive = false;
+        let bgAudio = null;                         // 背景音乐实例
+        let firstPlay = true;                        // 用于手势播放
+
+        // 界面元素
+        const homeScreen = document.getElementById('homeScreen');
+        const difficultyScreen = document.getElementById('difficultyScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const modal = document.getElementById('resultModal');
+        const nineGrid = document.getElementById('nineGrid');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const hitsDisplay = document.getElementById('hitsDisplay');
+        const totalHitsText = document.getElementById('totalHitsText');
+        const topIconName = document.getElementById('topIconName');
+        const topSubtitle = document.getElementById('topSubtitle');
+        const topHitCount = document.getElementById('topHitCount');
+
+        // 初始化九宫格 (9个空cell)
+        function buildGrid() {
+            nineGrid.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.index = i;
+                nineGrid.appendChild(cell);
+            }
+        }
+        buildGrid();
+
+        // ---------- 辅助函数 ----------
+        function showScreen(screen) {
+            homeScreen.classList.remove('active-screen');
+            difficultyScreen.classList.remove('active-screen');
+            gameScreen.classList.remove('active-screen');
+            screen.classList.add('active-screen');
+        }
+
+        // 停止所有定时器
+        function clearAllIntervals() {
+            if (timerInterval) clearInterval(timerInterval);
+            if (refreshInterval) clearInterval(refreshInterval);
+            timerInterval = null;
+            refreshInterval = null;
+        }
+
+        // 重置游戏数据 (不清除界面)
+        function resetGameData() {
+            totalHits = 0;
+            hitCount = { '后宫': 0, '天府': 0, '云水楼': 0 };
+            // 清空所有格子的图片
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.innerHTML = '';
+            });
+            updateHitsDisplay();
+        }
+
+        // 更新击中显示
+        function updateHitsDisplay() {
+            hitsDisplay.innerText = `💥 ${totalHits}`;
+        }
+
+        // 计算当前图标数量
+        function countIcons() {
+            return document.querySelectorAll('.cell img').length;
+        }
+
+        // 随机添加一个图标 (最多三个, 且游戏活跃)
+        function addRandomIcon() {
+            if (!isGameActive) return;
+            if (countIcons() >= 3) return; // 已达上限
+
+            // 找到所有空的格子 (没有img的子节点)
+            const cells = Array.from(document.querySelectorAll('.cell'));
+            const emptyCells = cells.filter(cell => !cell.querySelector('img'));
+            if (emptyCells.length === 0) return;
+
+            // 随机选一个空格子
+            const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            // 随机三个图标类型
+            const types = ['后宫', '天府', '云水楼'];
+            const randomType = types[Math.floor(Math.random() * types.length)];
+            const imgSrc = IMAGES[randomType];
+
+            // 创建图片元素
+            const img = document.createElement('img');
+            img.src = imgSrc;
+            img.alt = randomType;
+            img.dataset.type = randomType;   // 储存类型, 用于点击统计
+            // 防止拖拽
+            img.draggable = false;
+            randomCell.appendChild(img);
+        }
+
+        // 播放背景音乐 (手势触发)
+        function playBackgroundMusic() {
+            if (!bgAudio) {
+                bgAudio = new Audio(BG_MUSIC);
+                bgAudio.loop = true;
+                bgAudio.volume = 0.5;
+            }
+            // 浏览器策略: 只能在用户手势后播放
+            bgAudio.play().catch(e => {
+                console.log('背景音乐自动播放失败, 等待手势:', e);
+            });
+        }
+
+        // 播放击打音效
+        function playHitSound() {
+            const hit = new Audio(HIT_SOUND);
+            hit.volume = 0.8;
+            hit.play().catch(e => console.log('音效播放失败:', e));
+        }
+
+        // 游戏结束逻辑
+        function gameOver() {
+            if (!isGameActive) return;
+            isGameActive = false;
+            clearAllIntervals();
+
+            // 准备弹窗数据
+            const total = totalHits;
+            // 找出被打了最多次的图标
+            let maxIcon = '后宫';
+            let maxCount = hitCount['后宫'];
+            if (hitCount['天府'] > maxCount) {
+                maxIcon = '天府';
+                maxCount = hitCount['天府'];
+            }
+            if (hitCount['云水楼'] > maxCount) {
+                maxIcon = '云水楼';
+                maxCount = hitCount['云水楼'];
+            }
+            // 如果全为0，maxIcon保持后宫 (但显示0次)
+            const subtitle = SUBTITLE[maxIcon];
+
+            // 填充弹窗
+            totalHitsText.innerText = `一共 ${total} 次`;
+            topIconName.innerText = maxIcon;
+            topSubtitle.innerText = subtitle;
+            topHitCount.innerText = `${maxCount} 次`;
+
+            // 显示弹窗
+            modal.style.display = 'flex';
+        }
+
+        // 开始游戏 (传入秒数)
+        function startGame(seconds) {
+            // 停止之前所有定时器
+            clearAllIntervals();
+            // 重置数据
+            resetGameData();
+            // 设定时间
+            timeLeft = seconds;
+            currentDifficulty = seconds;
+            timerDisplay.innerText = `${timeLeft}s`;
+            // 激活标志
+            isGameActive = true;
+            // 隐藏弹窗
+            modal.style.display = 'none';
+            // 切换到游戏界面
+            showScreen(gameScreen);
+
+            // 启动后立刻添加第一个图标
+            addRandomIcon();
+
+            // 倒计时
+            timerInterval = setInterval(() => {
+                if (!isGameActive) return;
+                timeLeft -= 1;
+                timerDisplay.innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    timerDisplay.innerText = `0s`;
+                    gameOver();
+                }
+            }, 1000);
+
+            // 刷新图标: 每隔1秒尝试加一个
+            refreshInterval = setInterval(() => {
+                if (!isGameActive) return;
+                addRandomIcon();
+            }, 1000);
+        }
+
+        // 返回主页
+        function goHome() {
+            clearAllIntervals();
+            isGameActive = false;
+            modal.style.display = 'none';
+            showScreen(homeScreen);
+            // 不清除格子，但下次开始会重置
+        }
+
+        // ---------- 事件绑定 ----------
+        // 主页“开始游戏”
+        document.getElementById('startGameBtn').addEventListener('click', (e) => {
+            playBackgroundMusic();   // 用户手势触发背景音乐
+            showScreen(difficultyScreen);
+        });
+
+        // 难度选择 三个按钮
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const time = parseInt(btn.dataset.time, 10);
+                startGame(time);
+            });
+        });
+
+        // 从难度返回主页
+        document.getElementById('backFromDifficulty').addEventListener('click', () => {
+            goHome();
+        });
+
+        // 九宫格点击代理 (打地鼠)
+        nineGrid.addEventListener('click', (e) => {
+            const img = e.target.closest('img');
+            if (!img || !isGameActive) return;   // 没点中图标 或 游戏未激活
+
+            const cell = img.parentElement;
+            if (!cell) return;
+
+            const iconType = img.dataset.type;   // '后宫' / '天府' / '云水楼'
+            if (iconType && hitCount.hasOwnProperty(iconType)) {
+                // 增加统计
+                hitCount[iconType] += 1;
+                totalHits += 1;
+                updateHitsDisplay();
+
+                // 播放击打音效
+                playHitSound();
+
+                // 移除被点击的图标
+                img.remove();
+
+                // 注意: 移除后图标数量减1, 等下次定时器会补充
+            }
+        });
+
+        // 弹窗内按钮：重现游戏
+        document.getElementById('restartGameBtn').addEventListener('click', () => {
+            modal.style.display = 'none';
+            // 用当前难度重新开始
+            startGame(currentDifficulty);
+        });
+
+        // 弹窗内按钮：回到主页
+        document.getElementById('backHomeBtn').addEventListener('click', () => {
+            goHome();
+        });
+
+        // 额外保险: 点击弹窗背景不关闭 (只有按钮可关)
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                // 可忽略, 或也关闭? 但按照要求只有两个按钮, 所以不关闭
+                // 但我们可以允许点背景关闭？不妥，保持严谨，不关
+            }
+        });
+
+        // 预加载音频 (不播放)
+        window.addEventListener('load', () => {
+            // 创建背景音乐对象但不自动播放
+            bgAudio = new Audio(BG_MUSIC);
+            bgAudio.loop = true;
+            bgAudio.volume = 0.4;
+            // 预加载打地鼠音效 (不播放)
+            new Audio(HIT_SOUND).load();
+            // 预加载图片 (可选)
+            Object.values(IMAGES).forEach(src => {
+                const img = new Image();
+                img.src = src;
+            });
+        });
+
+        // 为了确保第一次手势能播放背景，再次绑定主页任何点击 (已绑定开始按钮)
+        // 同时如果从重现游戏也要播放，但重现游戏内调用startGame时已经在手势中，无需额外
+
+        // 当从游戏回到主页时, 确保背景音乐继续播放 (不暂停)
+        // 但用户可能想关掉? 没要求开关, 所以保留
+
+        // 兼容触摸
+        const allButtons = document.querySelectorAll('.start-btn, .difficulty-btn, .back-home-small, .result-btn');
+        allButtons.forEach(btn => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();  // 防止双击缩放
+            });
+        });
+
+        // 最后确保首次进入主页没有音乐, 等用户点击开始
+        // 完成
+    })();
+</script>
+</body>
+</html>
